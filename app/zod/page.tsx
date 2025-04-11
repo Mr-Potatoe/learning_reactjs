@@ -1,0 +1,171 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { getUsers, deleteUser } from '@/actions/user'
+import { EditForm } from '@/components/EditForm'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
+import { toast } from 'sonner'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { useAuth } from '@/hooks/useAuth'
+import LoadingSpinner from '@/components/Spinner'
+import { Avatar } from '@/components/Avatar'
+
+type User = {
+  id: number
+  name: string | null
+  email: string
+  password: string
+}
+
+export default function UsersPage() {
+  const [users, setUsers] = useState<User[]>([])
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [open, setOpen] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const { session, status } = useAuth()
+
+  const fetchUsers = async () => {
+    const res = await getUsers()
+    setUsers(res.map(user => ({ ...user, password: '' }))) // Reset password for display
+    setSelectedIds(new Set())
+  }
+
+  useEffect(() => {
+    if (session) fetchUsers()
+  }, [session])
+
+  const handleEdit = (user: User) => {
+    setEditingUser(user)
+    setOpen(true)
+  }
+
+  const handleCreate = () => {
+    setEditingUser(null)
+    setOpen(true)
+  }
+
+  const handleDelete = async (id: number) => {
+    await deleteUser(id)
+    toast.success('User deleted')
+    fetchUsers()
+  }
+
+  const handleBulkDelete = async () => {
+    const promises = Array.from(selectedIds).map(id => deleteUser(id))
+    await Promise.all(promises)
+    toast.success('Users deleted')
+    fetchUsers()
+  }
+
+  const toggleSelect = (id: number) => {
+    const newSet = new Set(selectedIds)
+    if (newSet.has(id)) newSet.delete(id)
+    else newSet.add(id)
+    setSelectedIds(newSet)
+  }
+
+  const handleSuccess = async () => {
+    setOpen(false)
+    setEditingUser(null)
+    await fetchUsers()
+  }
+
+  if (status === 'loading') return <LoadingSpinner/>
+
+  return (
+    <div className="max-w-4xl mx-auto py-10 px-4">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">User List</h1>
+        <Avatar/>
+        <div className="flex items-center gap-2">
+          <Button onClick={handleCreate}>+ Add User</Button>
+          {selectedIds.size > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">Delete Selected</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Are you sure you want to delete {selectedIds.size} user{selectedIds.size > 1 ? 's' : ''}?
+                  </AlertDialogTitle>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleBulkDelete}>
+                    Yes, Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+      </div>
+
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-10"></TableHead>
+            <TableHead>Name</TableHead>
+            <TableHead>Email</TableHead>
+            <TableHead>Action</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {users.map((user) => (
+            <TableRow key={user.id}>
+              <TableCell>
+                <Checkbox
+                  checked={selectedIds.has(user.id)}
+                  onCheckedChange={() => toggleSelect(user.id)}
+                />
+              </TableCell>
+              <TableCell>{user.name}</TableCell>
+              <TableCell>{user.email}</TableCell>
+              <TableCell className="space-x-2">
+                <Button size="sm" onClick={() => handleEdit(user)}>
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => handleDelete(user.id)}
+                >
+                  Delete
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingUser ? 'Edit User' : 'Create User'}</DialogTitle>
+          </DialogHeader>
+          <EditForm
+            id={editingUser?.id}
+            initialData={{
+              name: editingUser?.name || '',
+              email: editingUser?.email || '',
+              password: editingUser?.password || '',
+            }}
+            onSuccess={handleSuccess}
+            submitText={editingUser ? 'Update' : 'Create'}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
