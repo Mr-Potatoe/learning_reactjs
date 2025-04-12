@@ -32,6 +32,12 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [open, setOpen] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState<'name' | 'email'>('name')
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
+  const [page, setPage] = useState(1)
+  const itemsPerPage = 2
+
   const { session, status } = useAuth()
 
   const fetchUsers = async () => {
@@ -39,6 +45,26 @@ export default function UsersPage() {
     setUsers(res.map(user => ({ ...user, password: '' }))) // Reset password for display
     setSelectedIds(new Set())
   }
+
+  const filteredUsers = users.filter(user =>
+    (user.name?.toLowerCase().includes(search.toLowerCase()) ||
+      user.email.toLowerCase().includes(search.toLowerCase()))
+    )
+
+    const sortedUsers = [...filteredUsers].sort((a, b) => {
+      const valA = a[sortBy]?.toLowerCase?.() ?? ''
+      const valB = b[sortBy]?.toLowerCase?.() ?? ''
+      if (sortOrder === 'asc') return valA.localeCompare(valB)
+      else return valB.localeCompare(valA)
+    })
+
+    const paginatedUsers = sortedUsers.slice(
+      (page - 1) * itemsPerPage,
+      page * itemsPerPage
+    )
+
+    const totalPages = Math.ceil(sortedUsers.length / itemsPerPage)
+
 
   useEffect(() => {
     if (session) fetchUsers()
@@ -80,13 +106,13 @@ export default function UsersPage() {
     await fetchUsers()
   }
 
-  if (status === 'loading') return <LoadingSpinner/>
+  if (status === 'loading') return <LoadingSpinner />
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">User List</h1>
-        <Avatar/>
+        <Avatar />
         <div className="flex items-center gap-2">
           <Button onClick={handleCreate}>+ Add User</Button>
           {selectedIds.size > 0 && (
@@ -111,6 +137,39 @@ export default function UsersPage() {
           )}
         </div>
       </div>
+      <div className="flex items-center justify-between mb-4">
+        <input
+          type="text"
+          placeholder="Search name/email..."
+          className="border p-2 rounded w-64"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value)
+            setPage(1) // reset to first page
+          }}
+        />
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSortBy('name')
+              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+            }}
+          >
+            Sort by Name ({sortOrder})
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSortBy('email')
+              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+            }}
+          >
+            Sort by Email ({sortOrder})
+          </Button>
+        </div>
+      </div>
 
       <Table>
         <TableHeader>
@@ -122,7 +181,7 @@ export default function UsersPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((user) => (
+          {paginatedUsers.map((user) => (
             <TableRow key={user.id}>
               <TableCell>
                 <Checkbox
@@ -148,6 +207,28 @@ export default function UsersPage() {
           ))}
         </TableBody>
       </Table>
+      <div className="mt-6 flex justify-between items-center">
+        <div className="text-sm text-gray-600">
+          Page {page} of {totalPages}
+        </div>
+        <div className="space-x-2">
+          <Button
+            variant="outline"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            disabled={page === totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

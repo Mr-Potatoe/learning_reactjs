@@ -54,7 +54,7 @@ export function EditForm({ id, initialData, onSuccess, submitText = 'Save' }: Ed
       onSuccess()
     } catch (error) {
       console.error('Error:', error)
-      toast.error('Action failed')
+      toast.error('Email already registered')
     } finally {
       setLoading(false)
     }
