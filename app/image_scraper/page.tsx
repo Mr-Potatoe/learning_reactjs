@@ -7,8 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationNext } from '@/components/ui/pagination';
 import { Progress } from '@/components/ui/progress';
-import { useAuth } from '@/hooks/useAuth';
-import LoadingSpinner from '@/components/Spinner';
+
 import { Avatar } from '@/components/Avatar';
 
 const ITEMS_PER_PAGE = 100;
@@ -29,10 +28,8 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
-  const { status } = useAuth()
 
-  if (status === 'loading') return <LoadingSpinner size={48} className="mx-auto mt-20" />;
-  
+
   const filteredImages = images.filter(img => {
     const typeMatch = filters.type === 'all' || img.type === filters.type;
     const sizeMatch = img.size >= filters.minSize && img.size <= filters.maxSize;
@@ -74,27 +71,27 @@ export default function Home() {
       const { saveAs } = await import('file-saver');
       const zip = new JSZip();
       const imgFolder = zip.folder('scraped-images');
-  
+
       let successfulDownloads = 0;
-      
+
       // Process images in batches
       const batchSize = 3;
       for (let i = 0; i < images.length; i += batchSize) {
         const batch = images.slice(i, i + batchSize);
-        
+
         await Promise.all(batch.map(async (img, index) => {
           try {
             const proxyUrl = `/api/proxy?url=${encodeURIComponent(img.url)}`;
             const response = await fetch(proxyUrl);
-            
+
             if (!response.ok) {
               throw new Error(`HTTP ${response.status}`);
             }
-  
+
             // Get the exact binary data without any processing
             const arrayBuffer = await response.arrayBuffer();
             const extension = img.type || img.url.split('.').pop()?.split('?')[0] || 'jpg';
-            
+
             // Add the raw binary data to the zip
             imgFolder?.file(`${img.alt || 'image'}-${i + index}.${extension}`, arrayBuffer);
             successfulDownloads++;
@@ -102,20 +99,20 @@ export default function Home() {
             console.error(`Failed to download ${img.url}:`, error);
           }
         }));
-  
+
         setDownloadProgress(Math.floor(((i + batchSize) / images.length) * 100));
       }
-  
+
       if (successfulDownloads === 0) {
         throw new Error('No images could be downloaded');
       }
-  
+
       // Generate zip WITHOUT compression
       const content = await zip.generateAsync({
         type: 'blob',
         compression: 'STORE' // No compression to preserve quality
       });
-      
+
       saveAs(content, 'scraped-images.zip');
       alert(`Successfully downloaded ${successfulDownloads} images in original quality`);
     } catch (error) {
@@ -132,15 +129,15 @@ export default function Home() {
       const { saveAs } = await import('file-saver');
       const proxyUrl = `/api/proxy?url=${encodeURIComponent(imgUrl)}`;
       const response = await fetch(proxyUrl);
-  
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-  
+
       // Get the exact binary data
       const blob = await response.blob();
       const extension = imgUrl.split('.').pop()?.split('?')[0] || 'jpg';
-      
+
       // Create a new blob with the exact same data
       const originalQualityBlob = new Blob([blob], { type: blob.type });
       saveAs(originalQualityBlob, `${alt || 'image'}.${extension}`);
@@ -152,7 +149,7 @@ export default function Home() {
 
   return (
     <div className="container mx-auto p-4">
-      <Avatar/>
+      <Avatar />
       <div className="flex gap-4 mb-8 flex-wrap">
         <Input
           type="url"
@@ -175,7 +172,7 @@ export default function Home() {
         <div className="mb-4">
           <Progress value={downloadProgress} className="h-2" />
           <p className="text-sm text-center mt-1">
-            Downloading {downloadProgress}% ({Math.floor(images.length * (downloadProgress/100))}/{images.length} images)
+            Downloading {downloadProgress}% ({Math.floor(images.length * (downloadProgress / 100))}/{images.length} images)
           </p>
         </div>
       )}

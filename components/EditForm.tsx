@@ -90,7 +90,7 @@ export function EditForm({ id, initialData, onSuccess, submitText = 'Save' }: Ed
         {errors.password && <p className="text-red-500 text-sm">{errors.password}</p>}
       </div>
 
-      <Button type="submit" className="w-full" disabled={loading}>
+      <Button type="submit" className="w-full" disabled={loading || !formData.name || !formData.email || (id ? false : !formData.password || formData.password.length < 6)}>
         {loading ? 'Saving...' : submitText}
       </Button>
     </form>

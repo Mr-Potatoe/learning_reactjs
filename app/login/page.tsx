@@ -28,6 +28,8 @@ export default function LoginPage() {
     }
     setLoading(false)
   }
+  
+  const isDisabled = loading || !form.email || (!form.password || form.password.length < 6);
 
   return (
     <form onSubmit={handleSubmit} className="max-w-sm mx-auto mt-20 space-y-4">
@@ -44,7 +46,7 @@ export default function LoginPage() {
         value={form.password}
         onChange={(e) => setForm({ ...form, password: e.target.value })}
       />
-      <Button type="submit" disabled={loading} className="w-full">
+      <Button type="submit" disabled={isDisabled} className="w-full">
         {loading ? 'Logging in...' : 'Login'}
       </Button>
     </form>

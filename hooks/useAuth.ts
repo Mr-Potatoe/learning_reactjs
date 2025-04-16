@@ -1,18 +1,18 @@
-// hooks/useAuth.ts
-import { useEffect } from 'react'
 import { useSession } from 'next-auth/react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 export function useAuth() {
   const { data: session, status } = useSession()
   const router = useRouter()
 
+  const isAuthenticated = !!session
+
   useEffect(() => {
-    if (status === 'loading') return
-    if (!session) {
+    if (status === 'unauthenticated') {
       router.push('/login')
     }
-  }, [status, session, router])
+  }, [status, router])
 
-  return { session, status }
+  return { session, status, isAuthenticated }
 }

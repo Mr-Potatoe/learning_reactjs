@@ -17,7 +17,6 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { toast } from 'sonner'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { useAuth } from '@/hooks/useAuth'
-import LoadingSpinner from '@/components/Spinner'
 import { Avatar } from '@/components/Avatar'
 
 type User = {
@@ -37,8 +36,8 @@ export default function UsersPage() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
   const [page, setPage] = useState(1)
   const itemsPerPage = 2
+  const { session } = useAuth()
 
-  const { session, status } = useAuth()
 
   const fetchUsers = async () => {
     const res = await getUsers()
@@ -105,8 +104,6 @@ export default function UsersPage() {
     setEditingUser(null)
     await fetchUsers()
   }
-
-  if (status === 'loading') return <LoadingSpinner />
 
   return (
     <div className="max-w-4xl mx-auto py-10 px-4">

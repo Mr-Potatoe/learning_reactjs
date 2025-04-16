@@ -26,12 +26,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="light">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider>
-        <Toaster position="top-center" richColors expand={true} />
+        <Toaster position="top-right" richColors expand={true} />
         {children}
         </SessionProvider>
       </body>
